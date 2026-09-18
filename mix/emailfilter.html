@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Formatter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4e73df, #1cc88a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 25px;
+            width: 100%;
+            max-width: 1100px;
+            border-radius: 18px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .email-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+            padding-left: 3px;
+        }
+
+        .button-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: none;
+            background: #eef2ff;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flex-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+
+        .input-container,
+        .output-container {
+            flex: 1;
+            min-width: 0;
+        }
+
+        textarea {
+            width: 100%;
+            height: 350px;
+            max-height: 60vh;
+            padding: 15px;
+            font-size: 14px;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            resize: vertical;
+        }
+
+        .output-container {
+            padding: 15px;
+            background: #f8f9fc;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            height: 350px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        code {
+            flex-grow: 1;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 14px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .message {
+            color: #888;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <label class="email-label" for="email">
+            <span>Format Emails based on .ext .num & rest</span>
+        </label>
+
+        <div class="button-group">
+            <button class="btn copy-btn" id="copyBtn" onclick="copyText()">📋</button>
+            <button class="btn clear-btn" id="clearBtn" onclick="clearText()">❌</button>
+        </div>
+    </div>
+
+    <div class="flex-wrapper">
+        <div class="input-container">
+            <textarea id="inputArea" placeholder="Paste items here..."></textarea>
+        </div>
+
+        <div class="output-container">
+            <code id="outputCode" class="message">No data found</code>
+        </div>
+    </div>
+</div>
+
+<script>
+const textarea = document.getElementById('inputArea');
+const outputCode = document.getElementById('outputCode');
+const copyBtn = document.getElementById('copyBtn');
+const clearBtn = document.getElementById('clearBtn');
+
+function categorizeEmails(emailList) {
+  const result = {
+    number: [],
+    ext: [],
+    rest: []
+  };
+
+  emailList.forEach(email => {
+    if (/^(?!.*\.ext).*?\d/i.test(email)) {
+      result.number.push(email);
+    } 
+    else if (email.toLowerCase().includes(".ext")) {
+      result.ext.push(email);
+    } 
+    else {
+      result.rest.push(email);
+    }
+  });
+
+  return result;
+}
+
+function formatData() {
+    let raw = textarea.value;
+
+    if (!raw.trim()) {
+        outputCode.textContent = "No data found";
+        outputCode.classList.add("message");
+        copyBtn.style.display = "none";
+        clearBtn.style.display = "none";
+        return;
+    }
+
+    let items = raw
+        .split(',')
+        .map(item => item.trim())
+        .map(item => item.replace(/^['"]+|['"]+$/g, ''))
+        .filter(item => item.length > 0);
+
+    if (items.length === 0) {
+        outputCode.textContent = "No valid data found";
+        outputCode.classList.add("message");
+        copyBtn.style.display = "none";
+        clearBtn.style.display = "none";
+        return;
+    }
+
+    const categorized = categorizeEmails(items);
+
+    let formatted = "";
+
+    if (categorized.number.length) {
+        let data = categorized.number.map(e => `"${e}"`).join(',');
+        formatted += "NUMBER:\n" + data + "\n\n";
+    }
+
+    if (categorized.ext.length) {
+        let data = categorized.ext.map(e => `"${e}"`).join(',');
+        formatted += "EXT:\n" + data + "\n\n";
+    }
+
+    if (categorized.rest.length) {
+        let data = categorized.rest.map(e => `"${e}"`).join(',');
+        formatted += "REST:\n" + data;
+    }
+
+    outputCode.textContent = formatted.trim();
+    outputCode.classList.remove("message");
+
+    copyBtn.style.display = "flex";
+    clearBtn.style.display = "flex";
+
+    const outputContainer = document.querySelector('.output-container');
+    outputContainer.scrollTop = outputContainer.scrollHeight;
+}
+
+textarea.addEventListener('input', formatData);
+
+function copyText() {
+    let text = outputCode.textContent;
+    if (!text || text.includes("No data")) return;
+    navigator.clipboard.writeText(text);
+}
+
+function clearText() {
+    textarea.value = "";
+    formatData();
+}
+</script>
+
+</body>
+</html>

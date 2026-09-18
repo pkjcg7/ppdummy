@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevents scrollbars if bubbles expand during burst */
+            position: relative;
+        }
+
+        /* --- Realistic Rain Bubble Overlay --- */
+        .bubble {
+            position: absolute;
+            top: -20px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, rgba(56, 189, 248, 0.1) 40%, rgba(255, 255, 255, 0) 70%);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.3), 0 2px 5px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            z-index: 100; /* Keeps bubbles floating OVER the cards */
+        }
+
+        /* Animation for bubbles popping midway */
+        @keyframes fall-and-burst-mid {
+            0% {
+                transform: translateY(0) scale(0.6);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            45% {
+                transform: translateY(45vh) scale(1);
+                opacity: 0.7;
+            }
+            50% {
+                transform: translateY(46vh) scale(1.6); /* Burst expanding effect */
+                opacity: 0;
+                border-color: rgba(56, 189, 248, 0.5);
+            }
+            100% {
+                transform: translateY(46vh) scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* Animation for bubbles popping at the bottom */
+        @keyframes fall-and-burst-bottom {
+            0% {
+                transform: translateY(0) scale(0.5);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                transform: translateY(95vh) scale(1);
+                opacity: 0.7;
+            }
+            95% {
+                transform: translateY(97vh) scale(1.6); /* Burst expanding effect */
+                opacity: 0;
+                border-color: rgba(56, 189, 248, 0.5);
+            }
+            100% {
+                transform: translateY(97vh) scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* Randomizing bubble dimensions, placements, and paths */
+        .bubble:nth-child(1) { left: 10%; width: 14px; height: 14px; animation: fall-and-burst-bottom 5s infinite linear; animation-delay: 0s; }
+        .bubble:nth-child(2) { left: 25%; width: 22px; height: 22px; animation: fall-and-burst-mid 4s infinite linear; animation-delay: 1.5s; }
+        .bubble:nth-child(3) { left: 40%; width: 10px; height: 10px; animation: fall-and-burst-bottom 6s infinite linear; animation-delay: 0.5s; }
+        .bubble:nth-child(4) { left: 55%; width: 18px; height: 18px; animation: fall-and-burst-mid 3.5s infinite linear; animation-delay: 2s; }
+        .bubble:nth-child(5) { left: 70%; width: 26px; height: 26px; animation: fall-and-burst-bottom 4.5s infinite linear; animation-delay: 1s; }
+        .bubble:nth-child(6) { left: 85%; width: 12px; height: 12px; animation: fall-and-burst-mid 5.5s infinite linear; animation-delay: 3s; }
+        .bubble:nth-child(7) { left: 18%; width: 16px; height: 16px; animation: fall-and-burst-bottom 4.8s infinite linear; animation-delay: 2.5s; }
+        .bubble:nth-child(8) { left: 65%; width: 20px; height: 20px; animation: fall-and-burst-mid 4.2s infinite linear; animation-delay: 0.8s; }
+        .bubble:nth-child(9) { left: 92%; width: 15px; height: 15px; animation: fall-and-burst-bottom 5.2s infinite linear; animation-delay: 3.8s; }
+        .bubble:nth-child(10) { left: 48%; width: 24px; height: 24px; animation: fall-and-burst-mid 3.8s infinite linear; animation-delay: 1.2s; }
+
+        /* Ensuring UI container remains clickable above background elements */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .clock {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 10px;
+        }
+
+        .date-display {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .metric-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .metric-box {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .input-group {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        input[type="date"] {
+            background-color: var(--bg-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 8px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+/* Clear Glass / Soft White Bubble */
+.bubble-white {
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35) 0%, rgba(200, 200, 200, 0.08) 40%, rgba(255, 255, 255, 0) 70%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: inset -1px -1px 4px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Iridescent "Indradhanu" Rainbow Bubble */
+.bubble-rainbow {
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5) 0%, rgba(236, 72, 153, 0.15) 30%, rgba(56, 189, 248, 0.15) 55%, rgba(234, 179, 8, 0.08) 75%);
+    border: 1px solid rgba(147, 197, 253, 0.4);
+    box-shadow: inset -2px -2px 6px rgba(168, 85, 247, 0.25), 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes fall-and-burst-mid {
+    0% { transform: translateY(0) scale(0.6); opacity: 0; }
+    10% { opacity: 0.75; }
+    45% { transform: translateY(45vh) scale(1); opacity: 0.75; }
+    50% { transform: translateY(46vh) scale(1.6); opacity: 0; border-color: rgba(56, 189, 248, 0.6); }
+    100% { transform: translateY(46vh) scale(2); opacity: 0; }
+}
+
+@keyframes fall-and-burst-bottom {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    10% { opacity: 0.75; }
+    90% { transform: translateY(94vh) scale(1); opacity: 0.75; }
+    95% { transform: translateY(96vh) scale(1.6); opacity: 0; border-color: rgba(236, 72, 153, 0.6); }
+    100% { transform: translateY(96vh) scale(2); opacity: 0; }
+}
+
+/* Random positioning configurations */
+.bubble:nth-child(1) { left: 8%; width: 14px; height: 14px; animation: fall-and-burst-bottom 4.8s infinite linear; }
+.bubble:nth-child(2) { left: 23%; width: 23px; height: 23px; animation: fall-and-burst-mid 3.9s infinite linear; animation-delay: 1.3s; }
+.bubble:nth-child(3) { left: 38%; width: 11px; height: 11px; animation: fall-and-burst-bottom 5.8s infinite linear; animation-delay: 0.4s; }
+.bubble:nth-child(4) { left: 52%; width: 19px; height: 19px; animation: fall-and-burst-mid 3.6s infinite linear; animation-delay: 1.8s; }
+.bubble:nth-child(5) { left: 68%; width: 25px; height: 25px; animation: fall-and-burst-bottom 4.3s infinite linear; animation-delay: 0.9s; }
+.bubble:nth-child(6) { left: 83%; width: 13px; height: 13px; animation: fall-and-burst-mid 5.2s infinite linear; animation-delay: 2.7s; }
+.bubble:nth-child(7) { left: 16%; width: 17px; height: 17px; animation: fall-and-burst-bottom 4.6s infinite linear; animation-delay: 2.2s; }
+.bubble:nth-child(8) { left: 62%; width: 21px; height: 21px; animation: fall-and-burst-mid 4.1s infinite linear; animation-delay: 0.7s; }
+.bubble:nth-child(9) { left: 91%; width: 15px; height: 15px; animation: fall-and-burst-bottom 5.0s infinite linear; animation-delay: 3.5s; }
+.bubble:nth-child(10) { left: 46%; width: 26px; height: 26px; animation: fall-and-burst-mid 3.7s infinite linear; animation-delay: 1.1s; }
+    </style>
+</head>
+<body>
+
+    <div class="bubble bubble-white"></div>
+    <div class="bubble bubble-rainbow"></div>
+    <div class="bubble bubble-white"></div>
+    <div class="bubble bubble-rainbow"></div>
+    <div class="bubble bubble-white"></div>
+    <div class="bubble bubble-rainbow"></div>
+    <div class="bubble bubble-white"></div>
+    <div class="bubble bubble-rainbow"></div>
+    <div class="bubble bubble-white"></div>
+    <div class="bubble bubble-rainbow"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="date-display" id="date-text">Loading date...</div>
+            <div class="clock" id="clock-text">00:00:00</div>
+        </div>
+
+        <div class="card metric-container">
+            <div class="metric-box">
+                <span class="metric-label">Days Left in <span id="current-year">----</span></span>
+                <span class="metric-value" id="days-year-end">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const LIFE_EXPECTANCY_YEARS = 85;
+
+    function updateDashboard() {
+        const now = new Date();
+
+        // 1. UPDATE 24H CLOCK
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const milliSeconds = String(now.getMilliseconds()).padStart(3, '0');
+        document.getElementById('clock-text').textContent = `${hours}:${minutes}:${seconds}:${milliSeconds}`;
+
+        // Update Header Date
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('date-text').textContent = now.toLocaleDateString(undefined, options);
+
+        // 2. UPDATE DAYS LEFT TO YEAR END
+        const currentYear = now.getFullYear();
+        document.getElementById('current-year').textContent = currentYear;
+        
+        const nextYear = new Date(currentYear + 1, 0, 1); 
+        const msInDay = 24 * 60 * 60 * 1000;
+        const daysLeftYear = Math.ceil((nextYear - now) / msInDay);
+        document.getElementById('days-year-end').textContent = daysLeftYear;
+
+        // 3. LIFESPAN CALCULATOR HANDLER
+        updateLifespan(now, msInDay);
+
+        // Loop smoothly to keep milliseconds ticking rapidly
+        requestAnimationFrame(updateDashboard);
+    }
+
+    function updateLifespan(now, msInDay) {
+        const birthdateInputEl = document.getElementById('birthdate');
+        const daysLiveElement = document.getElementById('days-left-live');
+
+        if (!birthdateInputEl || !daysLiveElement) return; 
+
+        const birthdateInput = birthdateInputEl.value;
+        if (!birthdateInput) {
+            daysLiveElement.textContent = "Select Birthdate";
+            return;
+        }
+        
+        /*
+        const birthDate = new Date(birthdateInput);
+        const endOfLifeDate = new Date(birthDate.getTime());
+        endOfLifeDate.setFullYear(birthDate.getFullYear() + LIFE_EXPECTANCY_YEARS);
+
+        const timeLeftMs = endOfLifeDate - now;
+
+        if (timeLeftMs < 0) {
+            daysLiveElement.textContent = "Living on bonus time! 🎉";
+        } else {
+            const daysLeftLive = Math.ceil(timeLeftMs / msInDay);
+            daysLiveElement.textContent = daysLeftLive.toLocaleString(); 
+        }
+        */
+    }
+
+    const birthdateEl = document.getElementById('birthdate');
+    if (birthdateEl) {
+        birthdateEl.addEventListener('change', updateDashboard);
+    }
+
+    // Start the ultra-fast animation frame loop
+    requestAnimationFrame(updateDashboard);
+</script>
+</body>
+</html>

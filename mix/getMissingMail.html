@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Split Screen Array Finder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* Modern dynamic grid split */
+        .split-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        .center-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        label {
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #475569;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Ultra-modern big rounded text boxes */
+        textarea {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 16px;
+            color: #334155;
+            background-color: #f8fafc;
+            resize: vertical;
+            line-height: 1.6;
+            transition: all 0.2s ease-in-out;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #3b82f6;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .bottom-section {
+            max-width: 550px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Premium interactive primary button */
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .action-btn:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .action-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Modern Output styling */
+        .output-container {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .output-container input[type="text"] {
+            flex: 1;
+            padding: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .copy-btn {
+            padding: 0 24px;
+            background-color: #0f172a;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background-color: #1e293b;
+        }
+
+        @media (max-width: 768px) {
+            .split-row {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="split-row">
+        <div class="input-group">
+            <label for="arrayA">Array A (comma-separated)</label>
+            <textarea id="arrayA" rows="8" placeholder="e.g. 1, 2, 3">"1", '2', 3</textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="arrayB">Array B (comma-separated)</label>
+            <textarea id="arrayB" rows="8" placeholder="e.g. 1, 5">"1", '5', "7"</textarea>
+        </div>
+    </div>
+
+    <div class="bottom-section">
+        <div class="center-row">
+            <button class="action-btn" onclick="calculateDifference()">Find Missing in A</button>
+        </div>
+
+        <div class="input-group">
+            <!--<label for="result"></label> -->
+            <div class="output-container">
+                <input type="text" id="result" readonly placeholder="Result will appear here">
+                <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getMissingInA(arrA, arrB) {
+  return arrB.filter(item => !arrA.includes(item));
+}
+
+// Helper function to strip leading/trailing quotes and spaces
+function sanitizeItem(item) {
+    let trimmed = item.trim();
+    // Remove wrapping single or double quotes if they exist
+    if ((trimmed.startsWith("'") && trimmed.endsWith("'")) || 
+        (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+        trimmed = trimmed.slice(1, -1);
+    }
+    return trimmed.trim();
+}
+
+function calculateDifference() {
+    const inputA = document.getElementById('arrayA').value;
+    const inputB = document.getElementById('arrayB').value;
+
+    // Convert string inputs to cleaned arrays with quote stripping applied
+    const a = inputA.split(',').map(sanitizeItem).filter(item => item !== "");
+    const b = inputB.split(',').map(sanitizeItem).filter(item => item !== "");
+
+    const result = getMissingInA(a, b);
+
+    // Formats array cleanly into bracket notation using single quotes for elements
+    const formattedResult = result.length > 0 ? `['${result.join("', '")}']` : "[]";
+
+    // Display parsed output
+    document.getElementById('result').value = formattedResult;
+}
+
+function copyToClipboard() {
+    const resultField = document.getElementById('result');
+    
+    if (!resultField.value) {
+        return;
+    }
+
+    resultField.select();
+    resultField.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(resultField.value);
+    
+    // Smooth user feedback toggle on button
+    const copyBtn = document.querySelector('.copy-btn');
+    const originalText = copyBtn.innerText;
+    copyBtn.innerText = "Copied!";
+    copyBtn.style.backgroundColor = "#10b981"; // Turns emerald green
+    
+    setTimeout(() => {
+        copyBtn.innerText = originalText;
+        copyBtn.style.backgroundColor = "#0f172a";
+    }, 1500);
+}
+</script>
+
+</body>
+</html>

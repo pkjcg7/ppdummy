@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candle Range</title>
+    <!-- Importing an elegant font style for headers and emphasis -->
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Playfair+Display:ital,wght@1,500;1,700&family=SF+Pro+Display&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-system: #f2f2f7;
+            --bg-card: #ffffff;
+            --input-fill: #f4f4f7;
+            --separator: #e5e5ea;
+            --text-main: #000000;
+            --text-muted: #6e6e73;
+            --apple-blue: #007aff;
+            --apple-red: #ff3b30;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background-color: var(--bg-system);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .settings-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 8px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 26px;
+            font-weight: 700;
+            margin: 0;
+            color: #1c1c1e;
+        }
+
+        /* Tiny, clean clear button structure */
+        .clear-btn {
+            background-color: rgba(0, 0, 0, 0.05);
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .clear-btn:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-main);
+        }
+
+        .settings-group {
+            background-color: var(--bg-card);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        .settings-row {
+            margin-bottom: 14px;
+        }
+
+        .settings-row:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            padding-left: 2px;
+        }
+
+        /* Highly visible light gray styling */
+        input {
+            width: 100%;
+            background-color: var(--input-fill);
+            border: 1px solid rgba(0,0,0,0.03);
+            border-radius: 10px;
+            font-size: 16px;
+            color: var(--text-main);
+            padding: 12px 14px;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        input:focus {
+            background-color: #ffffff;
+            border-color: var(--apple-blue);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+        }
+
+        input::placeholder {
+            color: #aeaeaf;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Inline message wrapper instead of native browser popups */
+        .error-message {
+            color: var(--apple-red);
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 16px;
+            display: none;
+            padding: 0 8px;
+            line-height: 1.4;
+        }
+
+        .action-button {
+            width: 100%;
+            background-color: var(--apple-blue);
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .action-button:hover {
+            background-color: #0062cc;
+        }
+
+        .action-button:active {
+            transform: scale(0.99);
+        }
+
+        .results-panel {
+            background-color: var(--bg-card);
+            border-radius: 14px;
+            padding: 18px 0;
+            margin-top: 20px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-item {
+            flex: 1;
+            text-align: center;
+            padding: 0 4px;
+            box-sizing: border-box;
+        }
+
+        .result-item:not(:last-child) {
+            border-right: 1px solid var(--separator);
+        }
+
+        .result-label {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .result-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .result-value.accent {
+            color: var(--apple-blue);
+        }
+    </style>
+</head>
+<body>
+
+<div class="settings-container">
+    <div class="header-bar">
+        <h1>Metrics</h1>
+        <button class="clear-btn" onclick="clearForm()">Clear</button>
+    </div>
+
+    <!-- Error message text container built into layouts -->
+    <div class="error-message" id="errorBox"></div>
+
+    <div class="settings-group">
+        <div class="settings-row">
+            <label for="highPrice">High Price</label>
+            <input type="number" id="highPrice" step="any" placeholder="Enter high value">
+        </div>
+        <div class="settings-row">
+            <label for="lowPrice">Low Price</label>
+            <input type="number" id="lowPrice" step="any" placeholder="Enter low value">
+        </div>
+    </div>
+
+    <button class="action-button" onclick="calculateRange()">Calculate Range</button>
+
+    <div class="results-panel" id="resultsBox">
+        <div class="result-item">
+            <span class="result-label">Abs Range</span>
+            <span class="result-value" id="absRange">-</span>
+        </div>
+        <div class="result-item">
+            <span class="result-label">% By Low</span>
+            <span class="result-value accent" id="pctLow">-</span>
+        </div>
+        <div class="result-item">
+            <span class="result-label">% By High</span>
+            <span class="result-value accent" id="pctHigh">-</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showError(message) {
+        const errorBox = document.getElementById('errorBox');
+        errorBox.innerText = message;
+        errorBox.style.display = 'block';
+        document.getElementById('resultsBox').style.display = 'none';
+    }
+
+    function hideError() {
+        document.getElementById('errorBox').style.display = 'none';
+    }
+
+    function calculateRange() {
+        hideError();
+        
+        const highVal = document.getElementById('highPrice').value.trim();
+        const lowVal = document.getElementById('lowPrice').value.trim();
+        const resultsBox = document.getElementById('resultsBox');
+        
+        // Custom empty state handler
+        if (highVal === "" || lowVal === "") {
+            showError("Please enter values with respect to fields below.");
+            return;
+        }
+
+        const high = parseFloat(highVal);
+        const low = parseFloat(lowVal);
+
+        if (isNaN(high) || isNaN(low)) {
+            showError("Please enter valid numerical configurations.");
+            return;
+        }
+        if (low > high) {
+            showError("The low pricing bound cannot cross above high baseline value.");
+            return;
+        }
+        if (low <= 0 || high <= 0) {
+            showError("Values must remain strictly above zero points.");
+            return;
+        }
+
+        const absoluteRange = high - low;
+        const percentByLow = (absoluteRange / low) * 100;
+        const percentByHigh = (absoluteRange / high) * 100;
+
+        document.getElementById('absRange').innerText = Number(absoluteRange.toFixed(4)).toLocaleString();
+        document.getElementById('pctLow').innerText = percentByLow.toFixed(3) + '%';
+        document.getElementById('pctHigh').innerText = percentByHigh.toFixed(3) + '%';
+        
+        resultsBox.style.display = 'flex';
+    }
+
+    function clearForm() {
+        document.getElementById('highPrice').value = '';
+        document.getElementById('lowPrice').value = '';
+        hideError();
+        
+        const resultsBox = document.getElementById('resultsBox');
+        resultsBox.style.display = 'none';
+        
+        document.getElementById('absRange').innerText = '-';
+        document.getElementById('pctLow').innerText = '-';
+
+    }
+</script>
+
+</body>
+</html>

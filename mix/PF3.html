@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Interest & Projection Tool</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .main-wrapper {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .left-panel { flex: 1.2; min-width: 500px; }
+        .right-panel { flex: 1; display: none; }
+
+        .card {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+
+        h2, h3 { text-align: center; margin-bottom: 10px; color: #333; }
+        .subtitle { text-align: center; font-size: 13px; color: #666; margin-bottom: 20px; display: block; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #555; font-size: 14px; font-weight: bold; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; outline: none; }
+        
+        button {
+            width: 100%; padding: 14px; border: none; border-radius: 8px;
+            background: linear-gradient(135deg, #4facfe, #00c6ff);
+            color: white; font-size: 16px; font-weight: bold; cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .btn-alt { background: linear-gradient(135deg, #6c5ce7, #a29bfe); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; border-radius: 8px; overflow: hidden; }
+        th { background: #4facfe; color: white; padding: 10px; font-size: 11px; text-transform: uppercase; }
+        td { padding: 12px; text-align: center; background: #fdfdfd; border-bottom: 1px solid #eee; font-size: 12px; line-height: 1.5; }
+        
+        .projection-header { background: #333; color: white; }
+        .acceleration-header { background: #6c5ce7; color: white; }
+        .highlight { color: #007bff; font-weight: bold; }
+        .small-text { font-size: 10px; color: #666; display: block; }
+
+        @media (max-width: 1100px) {
+            .main-wrapper { flex-direction: column; }
+            .left-panel { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="left-panel">
+        <div class="card">
+            <h2>Interest Calculator</h2>
+            <div class="input-group">
+                <label id="amountLabel">Invested Amount</label>
+                <input type="number" id="amount" placeholder="e.g. 100000" oninput="updateLabel()">
+            </div>
+            <div class="input-group">
+                <label>Annual Interest %</label>
+                <input type="number" step="0.01" id="percent" placeholder="e.g. 12">
+            </div>
+            <button onclick="calculate()">Calculate All Projections</button>
+        </div>
+
+        <div class="card" id="summaryCard" style="display:none;">
+            <h3>Summary Analysis</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Invested</th>
+                        <th>Annual Interest</th>
+                        <th>Quarterly</th>
+                        <th>Weekly</th>
+                        <th>Projection (W?M?Q?Y)</th>
+                        <th>Double (Proj vs Normal)</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="right-panel" id="rightPanel">
+        <div class="card">
+            <h3>Yearly Growth Roadmap</h3>
+            <table>
+                <thead>
+                    <tr class="projection-header">
+                        <th>Year</th>
+                        <th>Monthly Target</th>
+                        <th>Weekly Target</th>
+                        <th>Total Balance</th>
+                    </tr>
+                </thead>
+                <tbody id="projectionBody"></tbody>
+            </table>
+        </div>
+
+        <div class="card" id="accelerationCard">
+            <h3>Target Acceleration Impact</h3>
+            <span class="subtitle">Outcome if you achieve specific targets with initial investment</span>
+            <table>
+                <thead>
+                    <tr class="acceleration-header">
+                        <th>Target Source</th>
+                        <th>Weekly Goal</th>
+                        <th>New Annual Return</th>
+                        <th>Revised Double Time</th>
+                    </tr>
+                </thead>
+                <tbody id="accelerationBody"></tbody>
+            </table>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            
+            <div class="input-group">
+                <label>Custom Weekly Target</label>
+                <input type="number" id="customWeeklyInput" placeholder="Enter custom weekly amount">
+            </div>
+            <button class="btn-alt" onclick="addCustomRow()">Test Custom Target</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Clean formatting for Years and Months
+function formatYearsMonths(decimalYear) {
+    let years = Math.floor(decimalYear);
+    let months = Math.round((decimalYear - years) * 12);
+    if (months === 12) { years++; months = 0; }
+    
+    let parts = [];
+    if (years > 0) parts.push(years + (years === 1 ? " yr" : " yrs"));
+    if (months > 0) parts.push(months + (months === 1 ? " month" : " months"));
+    
+    return parts.join(" ") || "0 months";
+}
+
+function updateLabel() {
+    let amount = parseFloat(document.getElementById("amount").value);
+    const a = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+    const b = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+    function inWords(n) {
+        if (n < 20) return a[n];
+        if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? " " + a[n % 10] : "");
+        if (n < 1000) return a[Math.floor(n / 100)] + " hundred" + (n % 100 ? " " + inWords(n % 100) : "");
+        if (n < 100000) return inWords(Math.floor(n / 1000)) + " thousand" + (n % 1000 ? " " + inWords(n % 1000) : "");
+        if (n < 10000000) return inWords(Math.floor(n / 100000)) + " lakh" + (n % 100000 ? " " + inWords(n % 100000) : "");
+        return inWords(Math.floor(n / 10000000)) + " crore" + (n % 10000000 ? " " + inWords(n % 10000000) : "");
+    }
+
+    let label = document.getElementById("amountLabel");
+    if (!isNaN(amount) && amount > 0) {
+        label.innerText = `Invested Amount (${inWords(Math.floor(amount))} only)`;
+    } else { label.innerText = "Invested Amount"; }
+}
+
+function calculate() {
+    let amount = parseFloat(document.getElementById("amount").value);
+    let percent = parseFloat(document.getElementById("percent").value);
+
+    if (isNaN(amount) || isNaN(percent) || percent <= 0) {
+        alert("Enter valid values");
+        return;
+    }
+
+    document.getElementById("summaryCard").style.display = "block";
+    document.getElementById("rightPanel").style.display = "block";
+
+    let annualAmount = (amount * percent) / 100;
+    let normalweekly = annualAmount / 52;
+    let quarterlyAmount = annualAmount / 4;
+    let customWeekly = quarterlyAmount / 4;
+    let customMonthly = customWeekly * 4;
+    let customQuartely = customMonthly * 4;
+    let customYearly = customMonthly * 12;
+
+    let normalweeklyRate = (normalweekly / amount) * 100;
+    let weeklyRate = (customWeekly / amount) * 100;
+    let monthlyRate = (customMonthly / amount) * 100;
+    let quarterlyRate = (customQuartely / amount) * 100;
+    let yearlyRate = (customYearly / amount) * 100;
+
+    let normalDouble = 72 / percent;
+    let projDouble = 72 / yearlyRate;
+
+    document.getElementById("summaryBody").innerHTML = `
+        <tr>
+            <td>${amount.toLocaleString()}</td>
+            <td>${annualAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td>${quarterlyAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            <td>${normalweekly.toFixed(2)} <br> <span class="highlight">(${normalweeklyRate.toFixed(2)}%)</span></td>
+            <td>
+                W: ${customWeekly.toLocaleString(undefined, {maximumFractionDigits: 0})} (${weeklyRate.toFixed(2)}%)<br>
+                M: ${customMonthly.toLocaleString(undefined, {maximumFractionDigits: 0})} (${monthlyRate.toFixed(2)}%)<br>
+                Q: ${customQuartely.toLocaleString(undefined, {maximumFractionDigits: 0})} (${quarterlyRate.toFixed(2)}%)<br>
+                Y: ${customYearly.toLocaleString(undefined, {maximumFractionDigits: 0})} (${yearlyRate.toFixed(2)}%)
+            </td>
+            <td>
+                <strong>${formatYearsMonths(projDouble)}</strong><br>
+                <span class="small-text">vs ${formatYearsMonths(normalDouble)} (Normal)</span>
+            </td>
+        </tr>
+    `;
+
+    let projHtml = "";
+    let accelerationHtml = "";
+    let runningBalance = amount;
+    
+    // First Acceleration Row
+    let doubleInOneYearProfit = amount; 
+    let doubleInOneYearWeekly = doubleInOneYearProfit / 48; 
+    
+    accelerationHtml += `
+        <tr style="background: #fff9db;">
+            <td><strong>Target: Double in 1 Year</strong></td>
+            <td>${doubleInOneYearWeekly.toLocaleString(undefined, {maximumFractionDigits: 0})} / week</td>
+            <td class="highlight">100.00% ROI</td>
+            <td><strong>1 yr</strong> <br> <span class="small-text">Target Milestone</span></td>
+        </tr>
+    `;
+
+    for (let year = 1; year <= 5; year++) {
+        let yearInterest = (runningBalance * (yearlyRate / 100));
+        let mTarget = yearInterest / 12;
+        let wTarget = yearInterest / 48; 
+        
+        runningBalance += yearInterest;
+
+        projHtml += `
+            <tr>
+                <td><strong>Year ${year}</strong><br><span class="small-text">Profit: ${yearInterest.toLocaleString(undefined, {maximumFractionDigits: 0})}</span></td>
+                <td>${mTarget.toLocaleString(undefined, {maximumFractionDigits: 0})} <br> <span class="highlight">(${monthlyRate.toFixed(2)}%)</span></td>
+                <td>${wTarget.toLocaleString(undefined, {maximumFractionDigits: 0})} <br> <span class="highlight">(${weeklyRate.toFixed(2)}%)</span></td>
+                <td><strong>${runningBalance.toLocaleString(undefined, {maximumFractionDigits: 0})}</strong></td>
+            </tr>
+        `;
+
+        if (year >= 3) {
+            let accYearly = wTarget * 48;
+            let accRate = (accYearly / amount) * 100;
+            let accDouble = 72 / accRate;
+
+            accelerationHtml += `
+                <tr>
+                    <td><strong>If using Year ${year} Target</strong></td>
+                    <td>${wTarget.toLocaleString(undefined, {maximumFractionDigits: 0})} / week</td>
+                    <td class="highlight">${accRate.toFixed(2)}% ROI</td>
+                    <td><strong>${formatYearsMonths(accDouble)}</strong> <br> <span class="small-text">to double initial</span></td>
+                </tr>
+            `;
+        }
+    }
+    document.getElementById("projectionBody").innerHTML = projHtml;
+    document.getElementById("accelerationBody").innerHTML = accelerationHtml;
+}
+
+function addCustomRow() {
+    let amount = parseFloat(document.getElementById("amount").value);
+    let customWeekly = parseFloat(document.getElementById("customWeeklyInput").value);
+
+    if (isNaN(amount) || isNaN(customWeekly) || customWeekly <= 0) {
+        alert("Please calculate main data first and enter a valid custom weekly amount.");
+        return;
+    }
+
+    let accYearly = customWeekly * 48;
+    let accRate = (accYearly / amount) * 100;
+    let accDouble = 72 / accRate;
+
+    let newRow = `
+        <tr>
+            <td style="background: #f0f0ff;"><strong>Manual Custom Target</strong></td>
+            <td>${customWeekly.toLocaleString(undefined, {maximumFractionDigits: 0})} / week</td>
+            <td class="highlight" style="color: #6c5ce7;">${accRate.toFixed(2)}% ROI</td>
+            <td><strong>${formatYearsMonths(accDouble)}</strong> <br> <span class="small-text">to double initial</span></td>
+        </tr>
+    `;
+
+    document.getElementById("accelerationBody").insertAdjacentHTML('beforeend', newRow);
+}
+</script>
+
+</body>
+</html>

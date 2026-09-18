@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Formatter</title>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: "Segoe UI", sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .container {
+        background: white;
+        width: 100%;
+        max-width: 800px;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #777;
+        margin-bottom: 25px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #444;
+    }
+
+    textarea {
+        width: 100%;
+        height: 120px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        resize: vertical;
+        font-size: 15px;
+    }
+
+    textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 8px rgba(102,126,234,.3);
+    }
+
+    .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    button {
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: 0.3s;
+    }
+
+    .convert {
+        background: #4f46e5;
+    }
+
+    .copy {
+        background: #16a34a;
+    }
+
+    .clear {
+        background: #dc2626;
+    }
+
+    button:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+    }
+
+    #message {
+        margin-top: 10px;
+        color: #16a34a;
+        font-weight: 600;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <label>Input</label>
+    <textarea id="input"
+        placeholder="Example: USA1USA2USA3   will be 'USA1','USA2','USA3'"></textarea>
+
+    <div class="buttons">
+        <button class="convert" onclick="convertText()">Convert</button>
+        <button class="copy" onclick="copyOutput()">Copy Output</button>
+        <button class="clear" onclick="clearAll()">Clear</button>
+    </div>
+
+    <label>Output</label>
+    <textarea id="output" readonly></textarea>
+
+    <div id="message"></div>
+</div>
+
+<script>
+function convertText() {
+    const input = document.getElementById("input").value.trim();
+
+    if (!input) {
+        document.getElementById("output").value = "";
+        return;
+    }
+
+    // Match uppercase letters followed by digits
+    const matches = input.match(/[A-Z]+[0-9]+/g);
+
+    if (!matches) {
+        document.getElementById("output").value =
+            "No matching pattern found.";
+        return;
+    }
+
+    const result = matches
+        .map(item => `'${item}'`)
+        .join(",");
+
+    document.getElementById("output").value = result;
+}
+
+function copyOutput() {
+    const output = document.getElementById("output").value;
+
+    if (!output) return;
+
+    navigator.clipboard.writeText(output);
+
+    document.getElementById("message").innerText =
+        "✅ Output copied successfully!";
+}
+
+function clearAll() {
+    document.getElementById("input").value = "";
+    document.getElementById("output").value = "";
+    document.getElementById("message").innerText = "";
+}
+</script>
+
+</body>
+</html>

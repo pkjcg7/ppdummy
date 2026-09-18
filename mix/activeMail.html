@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Email Extractor</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --input-bg: rgba(15, 23, 42, 0.6);
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 32px;
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            background: linear-gradient(to right, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Side-by-Side Flex Layout */
+        .workspace {
+            display: flex;
+            gap: 24px;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .workspace {
+                flex-direction: row;
+            }
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            height: 28px;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        /* Action Icons Styling */
+        .action-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            resize: none;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        textarea[readonly] {
+            background: rgba(15, 23, 42, 0.3);
+            cursor: default;
+        }
+
+        /* Notification Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h2>Instant Email Extractor</h2>
+            <p class="subtitle">Paste below to see and copy immediate, cleaned formats.</p>
+        </header>
+
+        <div class="workspace">
+            <div class="panel">
+                <div class="panel-header">
+                    <label for="rawInput">Input Data</label>
+                </div>
+                <textarea id="rawInput" placeholder="Paste your dirty email strings here... (Matches instantly)" oninput="processEmails()"></textarea>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <label for="cleanOutput">Cleaned Output</label>
+                    <div class="action-actions">
+                        <button class="icon-btn" onclick="copyOutput()" title="Copy to Clipboard">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                        <button class="icon-btn" onclick="clearAll()" title="Clear Form">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <textarea id="cleanOutput" readonly placeholder="Cleaned text automatically appears here..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Copied to clipboard!</div>
+
+    <script>
+        function processEmails() {
+            const inputVal = document.getElementById('rawInput').value;
+            const outputBox = document.getElementById('cleanOutput');
+
+            if (!inputVal.trim()) {
+                outputBox.value = "";
+                return;
+            }
+
+            // Target bracketed strings < >
+            const emailRegex = /<([^>]+)>/g;
+            let matches;
+            let emails = [];
+
+            while ((matches = emailRegex.exec(inputVal)) !== null) {
+                emails.push(matches[1]);
+            }
+
+            // Fallback to general email parsing if no brackets exist
+            /* const text = "Contact us at support@example.com or sales@domain.co.uk for help.";
+            const emails = text.match(genericRegex);
+
+            console.log(emails); 
+            // Output: ["support@example.com", "sales@domain.co.uk"]*/
+
+            if (emails.length === 0) {
+                const genericRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+                emails = inputVal.match(genericRegex) || [];
+            }
+
+            if (emails.length === 0) {
+                outputBox.value = "No valid emails found.";
+                return;
+            }
+
+            // Format with trailing comma and break lines
+            outputBox.value = emails.join(',');
+        }
+
+        function copyOutput() {
+            const outputBox = document.getElementById('cleanOutput');
+            const toast = document.getElementById('toast');
+
+            if (!outputBox.value || outputBox.value === "No valid emails found.") return;
+
+            navigator.clipboard.writeText(outputBox.value).then(() => {
+                toast.classList.add('show');
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed: ', err);
+            });
+        }
+
+        function clearAll() {
+            document.getElementById('rawInput').value = "";
+            document.getElementById('cleanOutput').value = "";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickWrap Formatter Pro</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4e73df, #1cc88a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 25px;
+            width: 100%;
+            max-width: 1100px;
+            border-radius: 18px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .options-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #4e73df;
+            background: #f0f3ff;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+
+        .checkbox-label:hover { background: #e0e7ff; }
+
+        .button-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: none;
+            background: #eef2ff;
+            cursor: pointer;
+            display: none; 
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .btn:hover { background: #dbeafe; transform: translateY(-2px); }
+
+        .copy-icon { position: absolute; width: 18px; height: 18px; }
+        .copy-icon::before, .copy-icon::after {
+            content: ""; position: absolute; width: 14px; height: 14px;
+            border: 2px solid #2563eb; border-radius: 3px; background: white;
+        }
+        .copy-icon::after { top: 0; left: 0; z-index: 2; }
+        .copy-icon::before { top: 4px; left: 4px; z-index: 1; }
+
+        .check-icon {
+            display: none;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .copy-btn.success { background: #28a745 !important; }
+        .copy-btn.success .copy-icon { display: none; }
+        .copy-btn.success .check-icon { display: block; }
+
+        .flex-wrapper { display: flex; gap: 20px; }
+        .input-container, .output-container { flex: 1; min-width: 0; }
+
+        textarea {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            resize: vertical;
+            outline: none;
+        }
+
+        .output-container {
+            padding: 15px;
+            background: #f8f9fc;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        code {
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .message { color: #888; font-style: italic; }
+
+        @media (max-width: 900px) {
+            .flex-wrapper { flex-direction: column; }
+            textarea, .output-container { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div class="options-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="prefixComma" checked> Leading Comma
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="ESPNMode"> ESPN Formatter
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="sqlMode"> SQL Generator
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="inlineMode"> Inline
+            </label>
+        </div>
+
+        <div class="button-group">
+            <button class="btn copy-btn" id="copyBtn" onclick="copyText()" title="Copy Result">
+                <span class="copy-icon"></span>
+                <span class="check-icon">✓</span>
+            </button>
+            <button class="btn clear-btn" id="clearBtn" onclick="clearText()" title="Clear All">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-wrapper">
+        <div class="input-container">
+            <textarea id="inputArea" placeholder="Paste data here...(CTRL+L/I/S,Shift,DEL)"></textarea>
+        </div>
+        <div class="output-container" id="outScroll">
+            <code id="outputCode" class="message">No data found</code>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('inputArea');
+    const outputCode = document.getElementById('outputCode');
+    const outputWrapper = document.getElementById('outScroll');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    const cbComma = document.getElementById('prefixComma');
+    const cbESPN = document.getElementById('ESPNMode');
+    const cbSql = document.getElementById('sqlMode');
+    const cbInline = document.getElementById('inlineMode');
+
+    // --- KEYBOARD SHORTCUTS ---
+    document.addEventListener('keydown', function(e) {
+        const isCtrl = e.ctrlKey || e.metaKey;
+
+        if (isCtrl && e.key.toLowerCase() === 'l') {
+            e.preventDefault();
+            cbComma.checked = !cbComma.checked;
+            formatData();
+        }
+
+        if (isCtrl && e.key.toLowerCase() === 'i') {
+            e.preventDefault();
+            cbESPN.checked = !cbESPN.checked;
+            if (cbESPN.checked) { cbSql.checked = false; cbInline.checked = false; }
+            formatData();
+        }
+
+        if (isCtrl && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            cbSql.checked = !cbSql.checked;
+            if (cbSql.checked) { cbESPN.checked = false; cbInline.checked = false; }
+            formatData();
+        }
+
+        if (e.key === 'Shift' && copyBtn.style.display === "flex") {
+            copyText();
+        }
+
+        if (e.key === 'Delete') {
+            clearText();
+        }
+    });
+
+    function formatData() {
+        let raw = textarea.value.trim().toLowerCase();
+
+        if (!raw) {
+            outputCode.textContent = "No data found";
+            outputCode.classList.add("message");
+            copyBtn.style.display = "none";
+            clearBtn.style.display = "none";
+            return;
+        }
+
+        let items = [];
+
+        // Modes that require specific Email extraction
+        if (cbESPN.checked || cbSql.checked || cbInline.checked) {
+            const regex = /[a-zA-Z0-9._%+-]+@ESPN\.com/gi;
+            items = raw.match(regex) || [];
+            items = [...new Set(items)];
+        } else {
+            items = raw.split(/[\n,]+/)
+                .map(item => item.trim().replace(/^['"]+|['"]+$/g, ''))
+                .filter(item => item.length > 0);
+        }
+
+        if (items.length === 0) {
+            outputCode.textContent = "No valid data found for selected mode";
+            copyBtn.style.display = "none";
+            clearBtn.style.display = "none";
+            return;
+        }
+
+        let result = "";
+
+        if (cbSql.checked) {
+            const unionRows = items.map((email, idx) => 
+                idx === 0 ? `    SELECT '${email}' AS email` : `    UNION ALL SELECT '${email}'`
+            ).join('\n');
+            result = `SELECT \n    search_list.email,\n    aedi_web_ui_md.ESPN_user.*\nFROM (\n${unionRows}\n) AS search_list\nLEFT JOIN aedi_web_ui_md.ESPN_user ON search_list.email = aedi_web_ui_md.ESPN_user.alternate_email \nWHERE aedi_web_ui_md.ESPN_user.alternate_email IS NULL;`;
+        } else if (cbInline.checked) {
+            // New logic for Inline mode: join with " -" and a newline
+            result = items.map(item => `${item} -`).join('\n');
+        } else if (cbESPN.checked) {
+            result = items.map(item => `"${item}"`).join(',');
+            if (cbComma.checked) result = ',' + result;
+        } else {
+            result = items.map(item => `'${item}'`).join(',');
+            if (cbComma.checked) result = ',' + result;
+        }
+
+        outputCode.textContent = result;
+        outputCode.classList.remove("message");
+        copyBtn.style.display = "flex";
+        clearBtn.style.display = "flex";
+
+        outputWrapper.scrollTop = outputWrapper.scrollHeight;
+    }
+
+    // Event Listeners
+    textarea.addEventListener('input', formatData);
+    
+    [cbComma, cbESPN, cbSql, cbInline].forEach(el => {
+        el.addEventListener('change', () => {
+            // Mutual exclusivity logic
+            if(el === cbESPN && cbESPN.checked) { cbSql.checked = false; cbInline.checked = false; }
+            if(el === cbSql && cbSql.checked) { cbESPN.checked = false; cbInline.checked = false; }
+            if(el === cbInline && cbInline.checked) { cbESPN.checked = false; cbSql.checked = false; }
+            formatData();
+        });
+    });
+
+    window.copyText = function() {
+        navigator.clipboard.writeText(outputCode.textContent).then(() => {
+            copyBtn.classList.add("success");
+            setTimeout(() => { copyBtn.classList.remove("success"); }, 1500);
+        });
+    }
+
+    window.clearText = function() {
+        textarea.value = "";
+        formatData();
+        textarea.focus();
+    }
+
+    textarea.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').trim();
+        const current = textarea.value.trim();
+        textarea.value = (current === '') ? pasted : current + ',' + pasted;
+        formatData();
+        textarea.scrollTop = textarea.scrollHeight;
+    });
+
+    textarea.focus();
+    formatData();
+});
+</script>
+</html>

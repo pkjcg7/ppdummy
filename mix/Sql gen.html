@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL QuickGen & Reference</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            padding: 25px;
+            width: 100%;
+            max-width: 1200px;
+            border-radius: 18px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .controls { display: flex; gap: 20px; align-items: center; }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #34495e;
+            cursor: pointer;
+        }
+        .button-group { display: flex; align-items: center; gap: 10px; }
+        
+        .btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 2px solid #eef2ff;
+            background: #f8f9fc;
+            cursor: pointer;
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .btn:hover { background: #dbeafe; border-color: #3498db; transform: translateY(-2px); }
+        .copy-btn.success { background: #28a745 !important; border-color: #28a745 !important; }
+        
+        /* ORIGINAL STACKED PAPER ICON */
+        .copy-icon { position: absolute; width: 18px; height: 18px; }
+        .copy-icon::before, .copy-icon::after {
+            content: ""; position: absolute; width: 14px; height: 14px;
+            border: 2px solid #2563eb; border-radius: 3px; background: white;
+        }
+        .copy-icon::after { top: 0; left: 0; z-index: 2; }
+        .copy-icon::before { top: 4px; left: 4px; z-index: 1; }
+
+        .check-icon { display: none; color: white; font-weight: bold; font-size: 18px; }
+        .copy-btn.success .copy-icon { display: none; }
+        .copy-btn.success .check-icon { display: block; }
+        
+        .flex-wrapper { display: flex; gap: 20px; }
+        .input-container, .output-container { flex: 1; min-width: 0; }
+        textarea {
+            width: 100%; height: 550px; padding: 15px;
+            font-family: 'Courier New', monospace;
+            border-radius: 12px; border: 1px solid #ddd;
+            resize: vertical; outline: none; background: #fafafa;
+        }
+        .output-container {
+            padding: 15px; background: #1e1e1e; color: #d4d4d4;
+            border-radius: 12px; height: 550px; overflow-y: auto;
+            border: 4px solid #34495e;
+        }
+
+        /* CHEAT SHEET STYLES */
+        .syntax-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px; border-bottom: 1px solid #333; gap: 10px;
+        }
+        .syntax-row:hover { background: #2a2a2a; }
+        .syntax-text { font-family: 'Consolas', monospace; font-size: 13px; color: #d4d4d4; flex: 1; }
+        
+        .mini-copy {
+            background: #34495e; border: 1px solid #3498db; color: #3498db;
+            padding: 6px 12px; border-radius: 6px; cursor: pointer; 
+            font-size: 11px; font-weight: bold; min-width: 80px;
+            transition: all 0.2s ease;
+        }
+        .mini-copy:hover { background: #3498db; color: white; }
+        .mini-copy.copied { background: #28a745 !important; border-color: #28a745 !important; color: white !important; }
+        
+        code { white-space: pre-wrap; word-break: break-word; font-family: 'Consolas', monospace; font-size: 13px; line-height: 1.6; }
+        .syntax-header { color: #f1c40f; font-weight: bold; border-bottom: 1px solid #444; margin-bottom: 10px; display: block; padding-bottom: 5px; }
+        .message { color: #888; font-style: italic; }
+
+        @media (max-width: 900px) { .flex-wrapper { flex-direction: column; } textarea, .output-container { height: 350px; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="toolbar">
+        <div class="controls">
+            <label class="checkbox-label">
+                <input type="checkbox" id="sqlGenToggle" checked>
+                <span>SQL *gen</span>
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="syntaxToggle">
+                <span>SQL Syntax Reference</span>
+            </label>
+        </div>
+
+        <div class="button-group">
+            <button class="btn copy-btn" id="copyBtn" onclick="copyText()" title="Copy Full Output">
+                <span class="copy-icon"></span>
+                <span class="check-icon">✓</span>
+            </button>
+            <button class="btn clear-btn" id="clearBtn" onclick="clearText()" title="Clear All">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2.5"><path d="M6 6L18 18M18 6L6 18"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-wrapper">
+        <div class="input-container">
+            <textarea id="inputArea" placeholder="Paste data here..."></textarea>
+        </div>
+        <div class="output-container" id="outputWrapper">
+            <code id="outputCode"></code>
+        </div>
+    </div>
+</div>
+
+<script>
+const textarea = document.getElementById('inputArea');
+const sqlToggle = document.getElementById('sqlGenToggle');
+const syntaxToggle = document.getElementById('syntaxToggle');
+const outputCode = document.getElementById('outputCode');
+const copyBtn = document.getElementById('copyBtn');
+
+const SQL_REFERENCE = [
+    "SELECT * FROM table_name;",
+    "SELECT * FROM table WHERE col = 'val';",
+    "SELECT * FROM table WHERE col1 = 1 AND col2 = 2;",
+    "SELECT * FROM table WHERE col IN (1, 2, 3);",
+    "SELECT * FROM table WHERE col LIKE '%pattern%';",
+    "SELECT * FROM table WHERE col BETWEEN 10 AND 20;",
+    "SELECT DISTINCT col FROM table;",
+    "SELECT * FROM table ORDER BY col DESC;",
+    "SELECT * FROM table LIMIT 10;",
+    "SELECT COUNT(*) FROM table;",
+    "SELECT SUM(col) FROM table;",
+    "SELECT col, COUNT(*) FROM table GROUP BY col;",
+    "SELECT col FROM table GROUP BY col HAVING COUNT(*) > 1;",
+    "SELECT * FROM t1 JOIN t2 ON t1.id = t2.id;",
+    "SELECT * FROM t1 LEFT JOIN t2 ON t1.id = t2.id;",
+    "INSERT INTO table (c1, c2) VALUES (v1, v2);",
+    "UPDATE table SET c1 = v1 WHERE id = 1;",
+    "DELETE FROM table WHERE id = 1;",
+    "TRUNCATE TABLE table_name;",
+    "SELECT col, CASE WHEN col > 1 THEN 'High' ELSE 'Low' END FROM table;",
+    "SELECT col FROM t1 UNION SELECT col FROM t2;"
+];
+
+function renderSQLReference() {
+    let html = `<span class="syntax-header">QUICK REFERENCE GUIDE</span>`;
+    SQL_REFERENCE.forEach((query, index) => {
+        // We pass 'this' to the function to target the specific button clicked
+        html += `
+        <div class="syntax-row">
+            <span class="syntax-text">${index + 1}. ${query}</span>
+            <button class="mini-copy" onclick="copySingleQuery(this, '${query.replace(/'/g, "\\'")}')">COPY</button>
+        </div>`;
+    });
+    outputCode.innerHTML = html;
+}
+
+function copySingleQuery(btnElement, text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Visual feedback for the specific button
+        btnElement.textContent = "COPIED!";
+        btnElement.classList.add("copied");
+        
+        // Revert after 2 seconds
+        setTimeout(() => {
+            btnElement.textContent = "COPY";
+            btnElement.classList.remove("copied");
+        }, 2000);
+    });
+}
+
+function formatData() {
+    if (syntaxToggle.checked) {
+        renderSQLReference();
+        return;
+    }
+
+    let raw = textarea.value.trim();
+    if (!raw) {
+        outputCode.innerHTML = `<span class="message">Waiting for input...</span>`;
+        return;
+    }
+
+    let items = [];
+    if (raw.includes('@')) {
+        items = raw.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+    } else {
+        items = raw.match(/\d+/g) || [];
+    }
+    items = [...new Set(items)];
+
+    if (items.length === 0) {
+        outputCode.textContent = "No valid data detected.";
+        return;
+    }
+
+    if (!sqlToggle.checked) {
+        outputCode.textContent = items.join(', ');
+        return;
+    }
+
+    generateSQL(items);
+}
+
+function generateSQL(items) {
+    const isEmail = items[0].includes('@');
+    let sql = "";
+
+    if (isEmail) {
+        const quoted = items.map(i => `'${i}'`).join(',');
+        sql += `-- Email Lookups\nSELECT * FROM table_Name_user WHERE alternate_email IN (${quoted});\n\n`;
+        sql += `-- LIKE Pattern Matches\n`;
+        items.forEach((email, idx) => {
+            sql += `SELECT * FROM table_Name_report_access WHERE emails LIKE '%${email}%';\n`;
+        });
+        sql += `\n-- User & Dashboard Join\nSELECT iu.id, iu.alternate_email, iud.dashboards, iu.persona \nFROM table_Name_user iu LEFT JOIN table_Name_user_dashboards iud ON iu.id = iud.user_id\nWHERE iu.alternate_email IN (${quoted});`;
+    } else {
+        const ids = items.join(',');
+        sql += `-- ID Based Queries --\nSELECT * FROM table_Name_user WHERE id IN (${ids});\n`;
+        sql += `SELECT * FROM table_Name_user_dashboards WHERE user_id IN (${ids});\n`;
+        sql += `SELECT * FROM table_Name_user_brand_mapping WHERE user_id IN (${ids});\n`;
+        sql += `SELECT * FROM table_Name_user_kpi_mapping WHERE user_id IN (${ids});`;
+    }
+    outputCode.textContent = sql;
+}
+
+textarea.addEventListener('input', formatData);
+sqlToggle.addEventListener('change', formatData);
+syntaxToggle.addEventListener('change', formatData);
+
+function copyText() {
+    // This is for the main large copy button
+    navigator.clipboard.writeText(outputCode.innerText).then(() => {
+        copyBtn.classList.add("success");
+        setTimeout(() => copyBtn.classList.remove("success"), 2000);
+    });
+}
+
+function clearText() {
+    textarea.value = "";
+    formatData();
+    textarea.focus();
+}
+
+// Initializing
+formatData();
+textarea.focus();
+</script>
+
+</body>
+</html>

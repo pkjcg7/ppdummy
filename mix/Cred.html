@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhiteBoard</title>
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2x2 Grid */
+            gap: 20px;
+        }
+
+        .section {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            height: 450px;
+        }
+
+        .section-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #edf2f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .list-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 8px;
+        }
+
+        /* Custom Scrollbar */
+        .list-wrapper::-webkit-scrollbar { width: 5px; }
+        .list-wrapper::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+
+        .value-card {
+            background: #cbd5e0;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .value-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .desc-text {
+            font-size: 11px;
+            color: #718096;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .copy-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        code {
+            font-family: 'Consolas', monospace;
+            background: #f1f5f9;
+            color: #4a5568;
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            word-break: break-all;
+            flex-grow: 1;
+        }
+
+        .copy-btn {
+            background: #4e73df;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
+
+        .copy-btn:hover { background: #2e59d9; }
+        .copy-btn.success { background: #1cc88a; }
+
+        /* Responsive Breakpoint */
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            .section {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="section">
+        <div class="section-header">🔑 API Credentials</div>
+        <div class="list-wrapper" id="api-list"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">🗄️ Database IDs</div>
+        <div class="list-wrapper" id="db-list"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">⚙️ Server Config</div>
+        <div class="list-wrapper" id="server-list"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-header">🌐 Web Endpoints</div>
+        <div class="list-wrapper" id="web-list"></div>
+    </div>
+</div>
+
+<script>
+    // 4 Different Data Sets
+    const datasets = {
+        "api-list": [
+            { description: "S3 Bucket Secret", value: "ghp_16ch98v67m0284XjK9" },
+            { description: "AWS Access Key", value: "AKIAIOSFODNN7EXAMPLE" },
+            { description: "GitHub Token", value: "ghp_16ch98v67m0284XjK9" }
+        ],
+        "db-list": [
+            { description: "Production MongoDB", value: "cluster0-shard-00-01.mongodb.net" },
+            { description: "Redis Cache Port", value: "6379" },
+            { description: "Primary User UUID", value: "550e8400-e29b-41d4-a716-446655440000" }
+        ],
+        "server-list": [
+            { description: "Internal IP", value: "192.168.1.45" },
+            { description: "Docker Image ID", value: "sha256:7173b80988" },
+            { description: "Node Environment", value: "production" }
+        ],
+        "web-list": [
+            { description: "Auth Callback", value: "https://auth.myapp.com/callback" },
+            { description: "Health Check", value: "/api/v1/health" },
+            { description: "CORS Origin", value: "https://dashboard.myapp.com" }
+        ]
+    };
+
+    function renderAllLists() {
+        for (const [containerId, data] of Object.entries(datasets)) {
+            const wrapper = document.getElementById(containerId);
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'value-card';
+                card.innerHTML = `
+                    <div class="desc-text">${item.description}</div>
+                    <div class="copy-row">
+                        <code>${item.value}</code>
+                        <button class="copy-btn" onclick="copyIndividual('${item.value}', this)">Copy</button>
+                    </div>
+                `;
+                wrapper.appendChild(card);
+            });
+        }
+    }
+
+    function copyIndividual(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = "Copied!";
+            btn.classList.add('success');
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('success');
+            }, 1000);
+        });
+    }
+
+    renderAllLists();
+</script>
+
+</body>
+</html>
